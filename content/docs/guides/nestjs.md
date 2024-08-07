@@ -150,7 +150,10 @@ export class AppService {
 
   async getTable(name: string): Promise<any[]> {
     const client = await this.sql.connect();
-    const { rows } = await client.query(`SELECT * FROM ${name}`);
+    const query = 'SELECT * FROM $1';
+    const values = [name];
+    const { rows } = await client.query(query, values);
+    client.release();
     return rows;
   }
 }
@@ -164,10 +167,10 @@ export class AppService {
   constructor(@Inject('POSTGRES_POOL') private readonly sql: any) {}
 
   async getTable(name: string): Promise<any[]> {
-    return await this.sql(`SELECT * FROM ${name}`);
+    const escapedName = name.replace(/[^a-zA-Z0-9_]/g, '');
+    return await this.sql`SELECT * FROM "${escapedName}"`;
   }
 }
-```
 
 ```typescript
 import { Injectable, Inject } from '@nestjs/common';
@@ -177,10 +180,10 @@ export class AppService {
   constructor(@Inject('POSTGRES_POOL') private readonly sql: any) {}
 
   async getTable(name: string): Promise<any[]> {
-    return await this.sql(`SELECT * FROM ${name}`);
+    const escapedName = name.replace(/[^a-zA-Z0-9_]/g, '');
+    return await this.sql`SELECT * FROM "${escapedName}"`;
   }
 }
-```
 
 </CodeTabs>
 
@@ -216,10 +219,10 @@ export class AppController {
 
   @Get()
   async getTable() {
-    return this.appService.getTable('playing_with_neon');
+    const tableName = 'playing_with_neon'; // Ideally, this should come from a safe, validated source
+    return this.appService.getTable(tableName);
   }
 }
-```
 
 ## Run the app
 
